@@ -3,6 +3,7 @@ const Image = require("../models/Image");
 const ImageModel = require("../models/Image");
 const multer = require('multer');
 const {checkUserPassword} = require("./auth");
+const {verifyToken, verifyTokenAndAuthorization, verifyTokenAndAdmin} = require("./verifyToken");
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads');
@@ -14,11 +15,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({storage: storage});
 //Upload new image
-router.post('/upload', upload.single('image'), async (req, res, next) => {
+router.post('/upload', verifyTokenAndAuthorization,upload.single('image'), async (req, res, next) => {
     // req.file is the `avatar` file
     // req.body will hold the text fields, if there were any
     const newImage = new ImageModel({
-        userId: req.body.userId,
+        userId: req.body.uuid,
         label: req.body.label,
         image: req.file.path
     });
@@ -33,13 +34,13 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
 
 router.get('/', async (req, res) => {
         try {
-            const images = await Image.find(req.query.label ? {label: req.query.label, userId: req.body.userId} : {userId: req.body.userId});
+            const images = await Image.find({label: req.query.label});
             res.status(200).json(images);
         } catch (err) {
             res.status(500).json(err);
         }
     });
-router.delete('/delete', async (req, res) => {
+router.delete('/delete', verifyTokenAndAuthorization,async (req, res) => {
         const user = await Image.findById(req.body.userId);
         if (user) {
             if (checkUserPassword(user.password, req.body.password)) {
@@ -63,6 +64,16 @@ router.delete('/delete', async (req, res) => {
         }
     }
 )
+//req: {uuid: uuid}
+router.get('/byUserId', verifyTokenAndAuthorization,async (req, res) => {
+    try {
+        const images = await Image.find({userId: req.body.uuid});
+        res.status(200).json(images);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
 
 
 module.exports = router;

@@ -28,19 +28,20 @@ router.post("/signup", async (req, res) => {
     if(req.body.username && req.body.email && req.body.password) {
         let isUserExisted = await findUserByEmail(req.body.email);
 
-        !isUserExisted && res.status(200).json('this email is already registered!');
-
-        const newUSer = new User({
-            username: req.body.username,
-            email: req.body.email,
-            password: Cryptojs.AES.encrypt(req.body.password, process.env.PASS_SEC).toString(),
-        });
-        try{
-            //save new user into db
-            const savedUSer = await newUSer.save();
-            res.status(201).json(savedUSer);
-        } catch(err){
-            res.status(500).json(err);
+        isUserExisted && res.status(200).json('this email is already registered!');
+        if(!isUserExisted) {
+            const newUSer = new User({
+                username: req.body.username,
+                email: req.body.email,
+                password: Cryptojs.AES.encrypt(req.body.password, process.env.PASS_SEC).toString(),
+            });
+            try{
+                //save new user into db
+                const savedUSer = newUSer.save();
+                res.status(201).json(newUSer);
+            } catch(err){
+                res.status(500).json(err);
+            }
         }
     } else {
         res.status(400).json("Bad Request!");
@@ -65,7 +66,7 @@ router.post("/login", async(req, res) => {
                 id: user._id,
                 isAdmin: user.isAdmin
             }, process.env.JWT_SEC, {expiresIn: "3d"})
-            //send back user info except for pass
+            //send back user info except for password
             const {password, ...others} = user._doc;
             checkUserPassword(user.password, req.body.password) && user && res.status(200).json({...others, accessToken});
 

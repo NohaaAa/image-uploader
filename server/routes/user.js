@@ -1,7 +1,7 @@
-const {verifyToken, verifyTokenAndAuthorization, verifyTokenAndAdmin} = require("./verifyToken");
+const {verifyTokenAndAuthorization, verifyTokenAndAdmin} = require("./verifyToken");
 const Cryptojs = require("crypto-js");
 const router = require("express").Router();
-// const User = require("../models/User");
+const User = require("../models/User");
 
 //UPDATE user's user name, email, password
 //request = {uuid: string}
